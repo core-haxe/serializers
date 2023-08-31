@@ -8,8 +8,8 @@ class HaxeSerializableBuilder {
         var fields = Context.getBuildFields();
         SerializableBuilder.findOrAddConstructor(fields);
 
-        var toStringFn = SerializableBuilder.findOrAddToString(fields);
-        var fromStringFn = SerializableBuilder.findOrAddFromString(fields);
+        var serializeFn = SerializableBuilder.findOrAddToString(fields);
+        var unserializeFn = SerializableBuilder.findOrAddFromString(fields);
         
         var localClass = Context.getLocalClass();
         var parts = localClass.toString().split(".");
@@ -20,7 +20,7 @@ class HaxeSerializableBuilder {
             name: s
         });
 
-        switch (toStringFn.kind) {
+        switch (serializeFn.kind) {
             case FFun(f): {
                 switch (f.expr.expr) {
                     case EBlock(exprs):
@@ -34,7 +34,7 @@ class HaxeSerializableBuilder {
             case _:
         }
 
-        switch (fromStringFn.kind) {
+        switch (unserializeFn.kind) {
             case FFun(f): {
                 switch (f.expr.expr) {
                     case EBlock(exprs):

@@ -1,6 +1,6 @@
 package serializers;
 
 interface ISerializable {
-    function toString():String;
-    function fromString(data:Any):Void;
+    function serialize():String;
+    function unserialize(data:Any):Void;
 }

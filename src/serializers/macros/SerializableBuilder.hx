@@ -29,17 +29,17 @@ class SerializableBuilder {
         return ctor;
     }
 
-    public static function findOrAddToString(fields:Array<Field>):Field {
+    public static function findOrAddSerialize(fields:Array<Field>):Field {
         var fn:Field = null;
         for (field in fields) {
-            if (field.name == "toString") {
+            if (field.name == "serialize") {
                 fn = field;
             }
         }
         
         if (fn == null) {
             fn = {
-                name: "toString",
+                name: "serialize",
                 access: [APublic],
                 kind: FFun({
                     args:[],
@@ -55,17 +55,17 @@ class SerializableBuilder {
         return fn;
     }
 
-    public static function findOrAddFromString(fields:Array<Field>):Field {
+    public static function findOrAddUnserialize(fields:Array<Field>):Field {
         var fn:Field = null;
         for (field in fields) {
-            if (field.name == "fromString") {
+            if (field.name == "unserialize") {
                 fn = field;
             }
         }
 
         if (fn == null) {
             fn = {
-                name: "fromString",
+                name: "unserialize",
                 access: [APublic],
                 kind: FFun({
                     args:[{
