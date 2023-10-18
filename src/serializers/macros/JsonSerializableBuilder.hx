@@ -6,6 +6,13 @@ import haxe.macro.Expr;
 class JsonSerializableBuilder {
     public static macro function build():Array<Field> {
         var fields = Context.getBuildFields();
+
+        addFields(fields);
+
+        return fields;
+    }
+
+    private static function addFields(fields:Array<Field>) {
         SerializableBuilder.findOrAddConstructor(fields);
 
         var serializeFn = SerializableBuilder.findOrAddSerialize(fields);
@@ -46,6 +53,10 @@ class JsonSerializableBuilder {
                         exprs.push(macro var parsedData = parser.fromJson(data));
 
                         for (field in fields) {
+                            if (field.access.contains(AStatic)) {
+                                continue;
+                            }
+                
                             switch (field.kind) {
                                 case FVar(t, e):
                                     var fieldName = field.name;
@@ -58,7 +69,5 @@ class JsonSerializableBuilder {
             }
             case _:
         }
-
-        return fields;
     }
 }
