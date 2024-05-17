@@ -13,10 +13,11 @@ class JsonSerializableBuilder {
     }
 
     private static function addFields(fields:Array<Field>) {
-        SerializableBuilder.findOrAddConstructor(fields);
+        var hasSuper:Bool = Context.getLocalClass().get().superClass != null;
+        SerializableBuilder.findOrAddConstructor(fields, hasSuper);
 
-        var serializeFn = SerializableBuilder.findOrAddSerialize(fields);
-        var unserializeFn = SerializableBuilder.findOrAddUnserialize(fields);
+        var serializeFn = SerializableBuilder.findOrAddSerialize(fields, hasSuper);
+        var unserializeFn = SerializableBuilder.findOrAddUnserialize(fields, hasSuper);
         
         var localClass = Context.getLocalClass();
         var parts = localClass.toString().split(".");
@@ -41,10 +42,18 @@ class JsonSerializableBuilder {
             case _:
         }
 
+        var superExpr:Expr = null;
+        if (hasSuper) {
+            superExpr = macro super.unserialize(data);
+        }
+
         switch (unserializeFn.kind) {
             case FFun(f): {
                 switch (f.expr.expr) {
                     case EBlock(exprs):
+                        if (hasSuper) {
+                            exprs.push(macro super.unserialize(data));
+                        }
                         exprs.push(macro if (!(data is String)) { // if the response isnt a string, lets turn it into one
                             data = haxe.Json.stringify(data);
                         });

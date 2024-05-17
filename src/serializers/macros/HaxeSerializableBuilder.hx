@@ -5,11 +5,13 @@ import haxe.macro.Expr;
 
 class HaxeSerializableBuilder {
     public static macro function build():Array<Field> {
-        var fields = Context.getBuildFields();
-        SerializableBuilder.findOrAddConstructor(fields);
+        var hasSuper:Bool = Context.getLocalClass().get().superClass != null;
 
-        var serializeFn = SerializableBuilder.findOrAddToString(fields);
-        var unserializeFn = SerializableBuilder.findOrAddFromString(fields);
+        var fields = Context.getBuildFields();
+        SerializableBuilder.findOrAddConstructor(fields, hasSuper);
+
+        var serializeFn = SerializableBuilder.findOrAddSerialize(fields, hasSuper);
+        var unserializeFn = SerializableBuilder.findOrAddUnserialize(fields, hasSuper);
         
         var localClass = Context.getLocalClass();
         var parts = localClass.toString().split(".");
@@ -38,6 +40,9 @@ class HaxeSerializableBuilder {
             case FFun(f): {
                 switch (f.expr.expr) {
                     case EBlock(exprs):
+                        if (hasSuper) {
+                            exprs.push(macro super.unserialize(data));
+                        }
                         exprs.push(macro if (!(data is String)) { // if the response isnt a string, lets turn it into one
                             data = Std.string(data);
                         });
@@ -45,6 +50,9 @@ class HaxeSerializableBuilder {
                         exprs.push(macro var parsedData = unserializer.unserialize());
 
                         for (field in fields) {
+                            if (field.access.contains(AStatic)) {
+                                continue;
+                            }
                             switch (field.kind) {
                                 case FVar(t, e):
                                     var fieldName = field.name;

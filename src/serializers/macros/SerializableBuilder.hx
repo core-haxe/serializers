@@ -4,11 +4,19 @@ import haxe.macro.Context;
 import haxe.macro.Expr;
 
 class SerializableBuilder {
-    public static function findOrAddConstructor(fields:Array<Field>):Field {
+    public static function findOrAddConstructor(fields:Array<Field>, hasSuper:Bool):Field {
         var ctor:Field = null;
         for (field in fields) {
             if (field.name == "new") {
                 ctor = field;
+            }
+        }
+
+        var expr = macro {
+        }
+        if (hasSuper) {
+            expr = macro {
+                super();
             }
         }
 
@@ -18,8 +26,7 @@ class SerializableBuilder {
                 access: [APublic],
                 kind: FFun({
                     args:[],
-                    expr: macro {
-                    }
+                    expr: expr
                 }),
                 pos: Context.currentPos()
             }
@@ -29,7 +36,7 @@ class SerializableBuilder {
         return ctor;
     }
 
-    public static function findOrAddSerialize(fields:Array<Field>):Field {
+    public static function findOrAddSerialize(fields:Array<Field>, hasSuper:Bool):Field {
         var fn:Field = null;
         for (field in fields) {
             if (field.name == "serialize") {
@@ -37,10 +44,15 @@ class SerializableBuilder {
             }
         }
         
+        var access = [APublic];
+        if (hasSuper) {
+            access.push(AOverride);
+        }
+
         if (fn == null) {
             fn = {
                 name: "serialize",
-                access: [APublic],
+                access: access,
                 kind: FFun({
                     args:[],
                     expr: macro {
@@ -55,7 +67,7 @@ class SerializableBuilder {
         return fn;
     }
 
-    public static function findOrAddUnserialize(fields:Array<Field>):Field {
+    public static function findOrAddUnserialize(fields:Array<Field>, hasSuper:Bool):Field {
         var fn:Field = null;
         for (field in fields) {
             if (field.name == "unserialize") {
@@ -63,10 +75,15 @@ class SerializableBuilder {
             }
         }
 
+        var access = [APublic];
+        if (hasSuper) {
+            access.push(AOverride);
+        }
+
         if (fn == null) {
             fn = {
                 name: "unserialize",
-                access: [APublic],
+                access: access,
                 kind: FFun({
                     args:[{
                         name: "data",
