@@ -13,6 +13,22 @@ class JsonSerializableBuilder {
     }
 
     private static function addFields(fields:Array<Field>) {
+        Sys.println(" - adding json serialization to " + Context.getLocalClass().toString());
+
+        var config = SerializableBuilder.getConfig(Context.getLocalClass().get().meta);
+        var fieldNames:Array<String> = []; // just hold onto these so we can easily check if ignore list contains something that doesnt exist
+        for (f in fields) {
+            fieldNames.push(f.name);
+            if (config.ignore.contains(f.name)) {
+                f.meta.push({name: ":jignored", pos: Context.currentPos()}); // json2object specific metadata
+            }
+        }
+        for (ignore in config.ignore) {
+            if (!fieldNames.contains(ignore)) {
+                Context.warning('serializer settings reference a field to ignore that doesnt exist: ${ignore}', Context.currentPos());
+            }
+        }
+
         var hasSuper:Bool = Context.getLocalClass().get().superClass != null;
         SerializableBuilder.findOrAddConstructor(fields, hasSuper);
 

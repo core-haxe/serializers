@@ -1,7 +1,11 @@
 package serializers.macros;
 
+import haxe.macro.ExprTools;
+import haxe.macro.Type.MetaAccess;
 import haxe.macro.Context;
 import haxe.macro.Expr;
+
+using StringTools;
 
 class SerializableBuilder {
     public static function findOrAddConstructor(fields:Array<Field>, hasSuper:Bool):Field {
@@ -98,5 +102,51 @@ class SerializableBuilder {
         }
 
         return fn;
+    }
+
+    public static function getConfig(meta:MetaAccess):SerializerConfig {
+        var config:SerializerConfig = {
+            ignore: []
+        };
+
+        for (serializer in meta.extract(":serializer")) {
+            var expr = ExprTools.map(serializer.params[0], addQuotes);
+            var tempConfig:SerializerConfig = ExprTools.getValue(expr);
+            if (tempConfig != null && tempConfig.ignore != null) {
+                config.ignore = config.ignore.concat(tempConfig.ignore);
+            }
+        }
+
+        var ignoreFields = [];
+        for (serializerIgnore in meta.extract(":serializerIgnore")) {
+            for (param in serializerIgnore.params) {
+                switch (param.expr) {
+                    case EConst(CIdent(s)):
+                        for (f in s.split(",")) {
+                            f = f.trim();
+                            if (!ignoreFields.contains(f)) {
+                                ignoreFields.push(f);
+                            }
+                        }
+                    case _:    
+                }
+            }
+        }
+        config.ignore = config.ignore.concat(ignoreFields);
+
+
+        return config;
+    }
+
+    private static function addQuotes(f:Expr):Expr {
+        return switch (f.expr) {
+            case EConst(CIdent(s)): macro $v{s};
+            case _:                 ExprTools.map(f, addQuotes);
+        }
+    }
+
+    private static function parseSerializerSettings(s:String) {
+        var settings:Dynamic = {};
+        return settings;
     }
 }
