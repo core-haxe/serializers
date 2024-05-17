@@ -5,9 +5,9 @@ import haxe.macro.Expr;
 
 class HaxeSerializableBuilder {
     public static macro function build():Array<Field> {
-        Sys.println(" - adding haxe serialization to " + Context.getLocalClass().toString());
+        Sys.println("serializers > adding haxe serialization to " + Context.getLocalClass().toString());
 
-        var config = SerializableBuilder.getConfig(Context.getLocalClass().get().meta);
+        var config = SerializableBuilder.getConfig(Context.getLocalClass().get());
         var fieldNames:Array<String> = []; // just hold onto these so we can easily check if ignore list contains something that doesnt exist
         var fields = Context.getBuildFields();
         for (f in fields) {
@@ -71,7 +71,17 @@ class HaxeSerializableBuilder {
                         exprs.push(macro var serializer = new haxe.Serializer());
                         exprs.push(macro serializer.useCache = true);
                         exprs.push(macro serializeImpl(serializer));
-                        exprs.push(macro return serializer.toString());
+                        exprs.push(macro var data = serializer.toString());
+                        if (config.transformers != null) {
+                            for (transformer in config.transformers) {
+                                var parts = transformer.split(".");
+                                var name = parts.pop();
+                                var type = {pack: parts, name: name};
+                                exprs.push(macro var transformer = new $type());
+                                exprs.push(macro data = transformer.transformTo(data));
+                            }
+                        }
+                        exprs.push(macro return data);
                     case _:    
                 }
             }
@@ -113,6 +123,17 @@ class HaxeSerializableBuilder {
                         exprs.push(macro if (!(data is String)) { // if the response isnt a string, lets turn it into one
                             data = Std.string(data);
                         });
+                        if (config.transformers != null) {
+                            var copy = config.transformers.copy();
+                            copy.reverse();
+                            for (transformer in copy) {
+                                var parts = transformer.split(".");
+                                var name = parts.pop();
+                                var type = {pack: parts, name: name};
+                                exprs.push(macro var transformer = new $type());
+                                exprs.push(macro data = transformer.transformFrom(data));
+                            }
+                        }
                         exprs.push(macro var unserializer = new haxe.Unserializer(data));
                         exprs.push(macro unserializeImpl(unserializer));
                     case _:    

@@ -1,5 +1,6 @@
 package serializers.macros;
 
+import haxe.macro.Type.ClassType;
 import haxe.macro.ExprTools;
 import haxe.macro.Type.MetaAccess;
 import haxe.macro.Context;
@@ -104,13 +105,34 @@ class SerializableBuilder {
         return fn;
     }
 
-    public static function getConfig(meta:MetaAccess):SerializerConfig {
+    public static function getConfig(classType:ClassType):SerializerConfig {
         var config:SerializerConfig = {
-            ignore: []
+            ignore: [],
+            transformers: []
         };
 
+        var ref = classType;
+        while (ref != null) {
+            var tempConfigs = extractConfigFromMeta(ref.meta);
+            for (c in tempConfigs) {
+                for (t in c.transformers) {
+                    if (!config.transformers.contains(t)) {
+                        config.transformers.push(t);
+                    }
+                }
+            }
+            if (ref.superClass == null) {
+                break;
+            }
+            ref = ref.superClass.t.get();
+        }
+
+        var meta = classType.meta;
         for (serializer in meta.extract(":serializer")) {
-            var expr = ExprTools.map(serializer.params[0], addQuotes);
+            var s = ExprTools.toString(serializer.params[0]);
+            s = s.replace(".", "_");
+            var expr = Context.parseInlineString(s, Context.currentPos());
+            expr = ExprTools.map(expr, addQuotes);
             var tempConfig:SerializerConfig = ExprTools.getValue(expr);
             if (tempConfig != null && tempConfig.ignore != null) {
                 config.ignore = config.ignore.concat(tempConfig.ignore);
@@ -134,8 +156,30 @@ class SerializableBuilder {
         }
         config.ignore = config.ignore.concat(ignoreFields);
 
+        var fixedTransformers = [];
+        for (t in config.transformers) {
+            t = t.replace("_", ".");
+            if (!fixedTransformers.contains(t)) {
+                fixedTransformers.push(t);            
+            }
+        }
+        config.transformers = fixedTransformers;
 
         return config;
+    }
+
+    private static function extractConfigFromMeta(meta:MetaAccess):Array<SerializerConfig> {
+        var list = [];
+        for (serializer in meta.extract(":serializer")) {
+            var s = ExprTools.toString(serializer.params[0]);
+            s = s.replace(".", "_");
+            var expr = Context.parseInlineString(s, Context.currentPos());
+            var expr = ExprTools.map(expr, addQuotes);
+            var tempConfig:SerializerConfig = ExprTools.getValue(expr);
+            list.push(tempConfig);
+        }
+
+        return list;
     }
 
     private static function addQuotes(f:Expr):Expr {
