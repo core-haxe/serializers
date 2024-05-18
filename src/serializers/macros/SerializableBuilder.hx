@@ -115,6 +115,9 @@ class SerializableBuilder {
         while (ref != null) {
             var tempConfigs = extractConfigFromMeta(ref.meta);
             for (c in tempConfigs) {
+                if (c.transformers == null) {
+                    continue;
+                }
                 for (t in c.transformers) {
                     if (!config.transformers.contains(t)) {
                         config.transformers.push(t);
