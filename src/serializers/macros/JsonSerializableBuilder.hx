@@ -141,6 +141,7 @@ class JsonSerializableBuilder {
             fn = {
                 name: "unserializeImpl",
                 access: access,
+                meta: [{name: ":noCompletion", pos: Context.currentPos()}],
                 kind: FFun({
                     args:[{name: "data", type: macro: String}],
                     expr: macro {

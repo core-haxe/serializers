@@ -162,6 +162,7 @@ class HaxeSerializableBuilder {
             fn = {
                 name: "serializeImpl",
                 access: access,
+                meta: [{name: ":noCompletion", pos: Context.currentPos()}],
                 kind: FFun({
                     args:[{name: "serializer", type: macro: haxe.Serializer}],
                     expr: macro {
@@ -192,6 +193,7 @@ class HaxeSerializableBuilder {
             fn = {
                 name: "unserializeImpl",
                 access: access,
+                meta: [{name: ":noCompletion", pos: Context.currentPos()}],
                 kind: FFun({
                     args:[{name: "unserializer", type: macro: haxe.Unserializer}],
                     expr: macro {
