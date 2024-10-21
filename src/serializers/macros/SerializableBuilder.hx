@@ -1,5 +1,7 @@
 package serializers.macros;
 
+#if macro
+
 import haxe.macro.Type.ClassType;
 import haxe.macro.ExprTools;
 import haxe.macro.Type.MetaAccess;
@@ -17,12 +19,15 @@ class SerializableBuilder {
             }
         }
 
-        var expr = macro {
-        }
+        var expr = macro { }
         if (hasSuper) {
             expr = macro {
                 super();
             }
+        }
+
+        if (Context.getLocalClass().get().isExtern) {
+            expr = null;
         }
 
         if (ctor == null) {
@@ -54,14 +59,18 @@ class SerializableBuilder {
             access.push(AOverride);
         }
 
+        var expr = macro {}
+        if (Context.getLocalClass().get().isExtern) {
+            expr = null;
+        }
+
         if (fn == null) {
             fn = {
                 name: "serialize",
                 access: access,
                 kind: FFun({
                     args:[],
-                    expr: macro {
-                    },
+                    expr: expr,
                     ret: macro: String,
                 }),
                 pos: Context.currentPos()
@@ -85,6 +94,11 @@ class SerializableBuilder {
             access.push(AOverride);
         }
 
+        var expr = macro {}
+        if (Context.getLocalClass().get().isExtern) {
+            expr = null;
+        }
+
         if (fn == null) {
             fn = {
                 name: "unserialize",
@@ -94,8 +108,8 @@ class SerializableBuilder {
                         name: "data",
                         type: macro: Any
                     }],
-                    expr: macro {
-                    }
+                    expr: expr,
+                    ret: macro: Void
                 }),
                 pos: Context.currentPos()
             }
@@ -197,3 +211,5 @@ class SerializableBuilder {
         return settings;
     }
 }
+
+#end

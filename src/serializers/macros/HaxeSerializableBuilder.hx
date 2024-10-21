@@ -1,5 +1,7 @@
 package serializers.macros;
 
+#if macro 
+
 import haxe.macro.Context;
 import haxe.macro.Expr;
 
@@ -26,6 +28,10 @@ class HaxeSerializableBuilder {
         var serializeImplFn = findOrAddSerializeImpl(fields, hasSuper);
         var unserializeFn = SerializableBuilder.findOrAddUnserialize(fields, hasSuper);
         var unserializeImplFn = findOrAddUnserializeImpl(fields, hasSuper);
+
+        if (Context.getLocalClass().get().isExtern) {
+            return fields;
+        }
         
         var localClass = Context.getLocalClass();
         var parts = localClass.toString().split(".");
@@ -158,6 +164,11 @@ class HaxeSerializableBuilder {
             access.push(AOverride);
         }
 
+        var expr = macro {}
+        if (Context.getLocalClass().get().isExtern) {
+            expr = null;
+        }
+
         if (fn == null) {
             fn = {
                 name: "serializeImpl",
@@ -165,8 +176,8 @@ class HaxeSerializableBuilder {
                 meta: [{name: ":noCompletion", pos: Context.currentPos()}],
                 kind: FFun({
                     args:[{name: "serializer", type: macro: haxe.Serializer}],
-                    expr: macro {
-                    }
+                    expr: expr,
+                    ret: macro: Void
                 }),
                 pos: Context.currentPos()
             }
@@ -189,6 +200,11 @@ class HaxeSerializableBuilder {
             access.push(AOverride);
         }
 
+        var expr = macro {}
+        if (Context.getLocalClass().get().isExtern) {
+            expr = null;
+        }
+
         if (fn == null) {
             fn = {
                 name: "unserializeImpl",
@@ -196,8 +212,8 @@ class HaxeSerializableBuilder {
                 meta: [{name: ":noCompletion", pos: Context.currentPos()}],
                 kind: FFun({
                     args:[{name: "unserializer", type: macro: haxe.Unserializer}],
-                    expr: macro {
-                    }
+                    expr: expr,
+                    ret: macro: Void
                 }),
                 pos: Context.currentPos()
             }
@@ -207,3 +223,5 @@ class HaxeSerializableBuilder {
         return fn;
     }
 }
+
+#end
