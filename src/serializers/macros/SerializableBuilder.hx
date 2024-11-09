@@ -11,6 +11,19 @@ import haxe.macro.Expr;
 using StringTools;
 
 class SerializableBuilder {
+    public static function fieldHasMeta(field:Field, metaName:String):Bool {
+        if (field.meta == null) {
+            return false;
+        }
+
+        for (m in field.meta) {
+            if (m.name == metaName || m.name == ":" + metaName) {
+                return true;
+            }
+        }
+
+        return false;
+    }
     public static function findOrAddConstructor(fields:Array<Field>, hasSuper:Bool):Field {
         var ctor:Field = null;
         for (field in fields) {

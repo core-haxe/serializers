@@ -85,7 +85,10 @@ class JsonSerializableBuilder {
                             if (field.access.contains(AStatic)) {
                                 continue;
                             }
-                
+                            if (SerializableBuilder.fieldHasMeta(f, "ignore")) {
+                                continue;
+                            }
+
                             switch (field.kind) {
                                 case FVar(t, e):
                                     var fieldName = field.name;

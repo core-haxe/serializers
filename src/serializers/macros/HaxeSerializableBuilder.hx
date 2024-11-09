@@ -57,6 +57,9 @@ class HaxeSerializableBuilder {
                             if (config.ignore.contains(f.name)) {
                                 continue;
                             }
+                            if (SerializableBuilder.fieldHasMeta(f, "ignore")) {
+                                continue;
+                            }
                             switch (f.kind) {
                                 case FVar(t, e):
                                     var fieldName = f.name;
@@ -107,6 +110,9 @@ class HaxeSerializableBuilder {
                                 continue;
                             }
                             if (config.ignore.contains(f.name)) {
+                                continue;
+                            }
+                            if (SerializableBuilder.fieldHasMeta(f, "ignore")) {
                                 continue;
                             }
                             switch (f.kind) {
