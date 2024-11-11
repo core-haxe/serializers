@@ -85,7 +85,7 @@ class JsonSerializableBuilder {
                             if (field.access.contains(AStatic)) {
                                 continue;
                             }
-                            if (SerializableBuilder.fieldHasMeta(f, "ignore")) {
+                            if (SerializableBuilder.fieldHasMeta(field, "ignore")) {
                                 continue;
                             }
 
