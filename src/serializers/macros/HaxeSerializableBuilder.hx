@@ -4,6 +4,8 @@ package serializers.macros;
 
 import haxe.macro.Context;
 import haxe.macro.Expr;
+import haxe.macro.TypeTools;
+import haxe.macro.ComplexTypeTools;
 
 class HaxeSerializableBuilder {
     public static macro function build():Array<Field> {
@@ -62,8 +64,68 @@ class HaxeSerializableBuilder {
                             }
                             switch (f.kind) {
                                 case FVar(t, e):
+                                    var complexType = TypeTools.toComplexType(Context.followWithAbstracts(ComplexTypeTools.toType(t)));
                                     var fieldName = f.name;
-                                    exprs.push(macro serializer.serialize($i{fieldName}));
+                                    switch (complexType) {
+                                        case (macro: Array<$valueComplexType>):
+                                            switch (Context.resolveType(valueComplexType, Context.currentPos())) {
+                                                case TInst(t, params):
+                                                    var isSerializable = SerializableBuilder.classTypeHasInterface(t.get(), "serializers.IHaxeSerializable");
+                                                    if (isSerializable) {
+                                                        exprs.push(macro {
+                                                            if ($i{fieldName} == null) {
+                                                                serializer.serialize(0);
+                                                            } else {
+                                                                serializer.serialize($i{fieldName}.length);
+                                                                for (item in $i{fieldName}) {
+                                                                    serializer.serialize(item.serialize());
+                                                                }
+                                                            }
+                                                        });
+                                                    } else {
+                                                        exprs.push(macro {
+                                                            if ($i{fieldName} == null) {
+                                                                serializer.serialize(0);
+                                                            } else {
+                                                                serializer.serialize($i{fieldName}.length);
+                                                                for (item in $i{fieldName}) {
+                                                                    serializer.serialize(item);
+                                                                }
+                                                            }
+                                                        });
+                                                    }
+                                                case _:
+                                                    exprs.push(macro {
+                                                        if ($i{fieldName} == null) {
+                                                            serializer.serialize(0);
+                                                        } else {
+                                                            serializer.serialize($i{fieldName}.length);
+                                                            for (item in $i{fieldName}) {
+                                                                serializer.serialize(item);
+                                                            }
+                                                        }
+                                                    });
+        
+                                            } 
+                                        case (macro: $valueComplexType):    
+                                            switch (Context.resolveType(valueComplexType, Context.currentPos())) {
+                                                case TInst(t, params):
+                                                    var isSerializable = SerializableBuilder.classTypeHasInterface(t.get(), "serializers.IHaxeSerializable");
+                                                    if (isSerializable) {
+                                                        exprs.push(macro {
+                                                            if ($i{fieldName} != null) {
+                                                                serializer.serialize($i{fieldName}.serialize());
+                                                            } else {
+                                                                serializer.serialize(null);
+                                                            }
+                                                        });
+                                                    } else {
+                                                        exprs.push(macro serializer.serialize($i{fieldName}));
+                                                    }
+                                                 case _:   
+                                                    exprs.push(macro serializer.serialize($i{fieldName}));
+                                            }
+                                    }
                                 case _:   
                             }
                         }
@@ -117,8 +179,75 @@ class HaxeSerializableBuilder {
                             }
                             switch (f.kind) {
                                 case FVar(t, e):
+                                    var complexType = TypeTools.toComplexType(Context.followWithAbstracts(ComplexTypeTools.toType(t)));
                                     var fieldName = f.name;
-                                    exprs.push(macro $i{fieldName} = unserializer.unserialize());
+                                    switch (complexType) {
+                                        case (macro: Array<$valueComplexType>):
+                                            switch (Context.resolveType(valueComplexType, Context.currentPos())) {
+                                                case TInst(t, params):
+                                                    var isSerializable = SerializableBuilder.classTypeHasInterface(t.get(), "serializers.IHaxeSerializable");
+                                                    if (isSerializable) {
+                                                        var typeName = t.toString();
+                                                        var typeNameParts = typeName.split(".");
+                                                        var valueTPath = {name: typeNameParts.pop() ,pack: typeNameParts};
+    
+                                                        exprs.push(macro {
+                                                            var arrayCount = unserializer.unserialize();
+                                                            for (i in 0...arrayCount) {
+                                                                var item = new $valueTPath();
+                                                                item.unserialize(unserializer.unserialize());
+                                                                if ($i{fieldName} == null) {
+                                                                    $i{fieldName} = [];
+                                                                }
+                                                                $i{fieldName}.push(item);
+                                                            }
+                                                        });
+                                                    } else {
+                                                        exprs.push(macro {
+                                                            var arrayCount = unserializer.unserialize();
+                                                            for (i in 0...arrayCount) {
+                                                                var item = unserializer.unserialize();
+                                                                if ($i{fieldName} == null) {
+                                                                    $i{fieldName} = [];
+                                                                }
+                                                                $i{fieldName}.push(unserializer.unserialize());
+                                                            }
+                                                        });
+                                                    }
+                                                case _:
+                                                    exprs.push(macro {
+                                                        var arrayCount = unserializer.unserialize();
+                                                        for (i in 0...arrayCount) {
+                                                            var item = unserializer.unserialize();
+                                                            if ($i{fieldName} == null) {
+                                                                $i{fieldName} = [];
+                                                            }
+                                                            $i{fieldName}.push(unserializer.unserialize());
+                                                        }
+                                                    });
+                                            }
+                                        case (macro: $valueComplexType):    
+                                            switch (Context.resolveType(valueComplexType, Context.currentPos())) {
+                                                case TInst(t, params):
+                                                    var typeName = t.toString();
+                                                    var typeNameParts = typeName.split(".");
+                                                    var valueTPath = {name: typeNameParts.pop() ,pack: typeNameParts};
+                                                    var isSerializable = SerializableBuilder.classTypeHasInterface(t.get(), "serializers.IHaxeSerializable");
+                                                    if (isSerializable) {
+                                                        exprs.push(macro {
+                                                            var tempData = unserializer.unserialize();
+                                                            if (tempData != null) {
+                                                                $i{fieldName} = new $valueTPath();
+                                                                $i{fieldName}.unserialize(tempData);
+                                                            }
+                                                        });
+                                                    } else {
+                                                        exprs.push(macro $i{fieldName} = unserializer.unserialize());
+                                                    }
+                                                 case _:   
+                                                    exprs.push(macro $i{fieldName} = unserializer.unserialize());
+                                                }
+                                    }
                                 case _:   
                             }
                         }

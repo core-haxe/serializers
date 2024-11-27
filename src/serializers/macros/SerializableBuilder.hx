@@ -11,6 +11,15 @@ import haxe.macro.Expr;
 using StringTools;
 
 class SerializableBuilder {
+    public static function classTypeHasInterface(classType:ClassType, interfaceToCheck:String) {
+        for (i in classType.interfaces) {
+            if (i.t.toString() == interfaceToCheck) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static function fieldHasMeta(field:Field, metaName:String):Bool {
         if (field.meta == null) {
             return false;
