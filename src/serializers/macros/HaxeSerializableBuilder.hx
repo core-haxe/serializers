@@ -210,7 +210,7 @@ class HaxeSerializableBuilder {
                                                                 if ($i{fieldName} == null) {
                                                                     $i{fieldName} = [];
                                                                 }
-                                                                $i{fieldName}.push(unserializer.unserialize());
+                                                                $i{fieldName}.push(item);
                                                             }
                                                         });
                                                     }
@@ -222,7 +222,7 @@ class HaxeSerializableBuilder {
                                                             if ($i{fieldName} == null) {
                                                                 $i{fieldName} = [];
                                                             }
-                                                            $i{fieldName}.push(unserializer.unserialize());
+                                                            $i{fieldName}.push(item);
                                                         }
                                                     });
                                             }
